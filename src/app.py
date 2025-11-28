@@ -197,14 +197,5 @@ with tab3:
     **Desenvolvido por Giovanni Silva.**
     """)
 
-
-
-
-### **Como Atualizar:**
-
-1.  No VS Code, abra o `src/app.py`.
-2.  Apague tudo e cole o código novo acima.
-3.  Salve.
-4.  No terminal:
     ```bash
     (git add ., git commit -m "Novo dashboard", git push
