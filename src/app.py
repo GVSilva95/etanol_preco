@@ -222,6 +222,4 @@ with tab3:
 3.  Salve.
 4.  No terminal:
     ```bash
-    git add .
-    git commit -m "Upgrade: Dashboard com dados em tempo real"
-    git push
+    (git add ., git commit -m "Novo dashboard", git push
