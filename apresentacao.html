@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dinâmica de Commodities - Etanol</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+/* 1. CONFIGURAÇÃO GERAL */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #1a1a1a; /* Fundo escuro externo */
+  display: grid;
+  gap: 20px;
+  grid-template-columns: 1fr;
+  margin: 0;
+  min-height: 100vh;
+  padding: 20px 0;
+  place-items: center;
+  font-family: 'Urbanist', sans-serif;
+}
+
+.slide-container {
+  align-items: flex-start;
+  background-color: #000;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  height: 720px;
+  justify-content: center;
+  overflow: hidden;
+  padding: 40px 60px;
+  position: relative;
+  width: 1280px;
+}
+
+/* 1.1 FUNDO E EFEITOS */
+
+.slide-container::before {
+  content: '';
+  height: 100%;
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 100%;
+  /* Efeito sutil de gradiente tech */
+  background: radial-gradient(circle at 90% 10%, #1e3a2f 0%, #000000 40%);
+  z-index: 0;
+}
+
+.slide-container::after {
+  background: rgba(218, 255, 222, 0.1);
+  bottom: 40px;
+  content: '';
+  height: 1px;
+  left: 60px;
+  position: absolute;
+  right: 60px;
+  z-index: 1;
+}
+
+.slide-container > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* 2. TIPOGRAFIA */
+
+h1, h2, h3, h4 {
+  color: #f5f5f5;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.1;
+}
+
+h1 {
+  font-size: 72px;
+  letter-spacing: -1px;
+}
+
+h1 span {
+  color: #deff9a; /* Verde Neon suave */
+}
+
+h2.slide-title {
+  font-size: 52px;
+  margin-bottom: 20px;
+  color: #deff9a;
+}
+
+h3 {
+  font-size: 28px;
+  color: #ffffff;
+  margin-bottom: 10px;
+}
+
+p, li {
+  color: #e0e0e0;
+  font-size: 22px;
+  font-weight: 300;
+  line-height: 1.6;
+  margin-bottom: 15px;
+}
+
+.subtitle {
+  color: #a0a0a0;
+  font-size: 26px;
+  font-weight: 300;
+  margin-top: 20px;
+}
+
+/* 3. LAYOUTS DOS SLIDES */
+
+/* Capa */
+.title-layout {
+  text-align: left;
+  max-width: 800px;
+}
+
+/* Duas Colunas */
+.two-column {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+}
+
+.two-column.tiled {
+    align-items: stretch;
+}
+
+.two-column.tiled > div {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    padding: 40px;
+}
+
+/* Ícones em Grade */
+.tiled-content {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+  width: 100%;
+}
+
+.tile {
+  background-color: #1a1a1a;
+  border-radius: 16px;
+  border: 1px solid #333;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  transition: transform 0.2s;
+}
+
+.tile:hover {
+    transform: translateY(-5px);
+    border-color: #deff9a;
+}
+
+.tile .icon-container {
+  color: #deff9a;
+  font-size: 36px;
+  margin-bottom: 10px;
+}
+
+/* Imagem à Direita */
+.image-wrapper {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(222, 255, 154, 0.3);
+    background: #000;
+}
+
+.image-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Ajusta a imagem sem cortar */
+}
+
+/* Imagem Sangrada (Tela Cheia de um lado) */
+.slide-container.bleed-image-layout {
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+.slide-container.bleed-image-layout::after {
+    display: none;
+}
+
+.slide-container.bleed-image-layout > .content-container {
+  padding: 80px 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+}
+
+.slide-container.bleed-image-layout > .image-container {
+  height: 100%;
+  width: 100%;
+}
+
+.slide-container.bleed-image-layout img.bleed-image-side {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  max-height: 720px;
+}
+
+/* Conclusão */
+.qa-layout {
+    text-align: center;
+    width: 100%;
+}
+
+ul {
+    padding-left: 20px;
+}
+
+li::marker {
+    color: #deff9a;
+}
+
+.code-text {
+    font-family: monospace;
+    color: #deff9a;
+    background: rgba(255,255,255,0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+    </style>
+</head>
+<body>
+
+<!-- Slide 1: Capa -->
+<div class="slide-container" id="slide1">
+  <div class="title-layout">
+    <p style="color: #deff9a; font-weight: 700; margin-bottom: 10px; letter-spacing: 2px;">PROJETO DE PORTFÓLIO</p>
+    <h1>Dinâmica de<br>Commodities: <span>Etanol</span>,<br>Petróleo e Câmbio</h1>
+    <p class="subtitle">
+      Modelagem Preditiva de Preços com Machine Learning e<br>Análise de Risco de Mercado.
+    </p>
+  </div>
+</div>
+
+<!-- Slide 2: Contexto -->
+<div class="slide-container" id="slide2">
+    <h2 class="slide-title">O Desafio do Negócio</h2>
+    <div class="two-column tiled">
+        <div>
+            <h3><i class="fa-solid fa-triangle-exclamation" style="color: #deff9a;"></i> A Volatilidade</h3>
+            <p>O setor sucroenergético enfrenta oscilações extremas. A decisão de vender ou estocar etanol depende de fatores globais complexos, tornando a previsão humana difícil e enviesada.</p>
+        </div>
+        <div>
+            <h3><i class="fa-solid fa-bullseye" style="color: #deff9a;"></i> O Objetivo</h3>
+            <p>Criar um modelo de <strong>"Preço Justo" (Fair Value)</strong> para identificar oportunidades de arbitragem — momentos em que o mercado está "barato" ou "caro" demais em relação aos seus fundamentos econômicos.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Slide 3: Metodologia -->
+<div class="slide-container" id="slide3">
+    <h2 class="slide-title">Metodologia do Projeto</h2>
+    <div class="tiled-content">
+        <div class="tile">
+            <div class="icon-container"><i class="fa-solid fa-database"></i></div>
+            <h3>1. Engenharia de Dados</h3>
+            <p>Coleta automatizada de dados do <strong>CEPEA</strong> (Etanol) e <strong>Yahoo Finance</strong> (Commodities), com tratamento de dados e correção de paridade.</p>
+        </div>
+        <div class="tile">
+            <div class="icon-container"><i class="fa-solid fa-brain"></i></div>
+            <h3>2. Machine Learning</h3>
+            <p>Treinamento de algoritmo <strong>Random Forest</strong> com acurácia de <span class="code-text">97%</span>, identificando padrões não-lineares e sazonalidade.</p>
+        </div>
+        <div class="tile">
+            <div class="icon-container"><i class="fa-solid fa-laptop-code"></i></div>
+            <h3>3. Produto Final</h3>
+            <p>Desenvolvimento de um <strong>Dashboard Interativo</strong> em Streamlit para simulação de cenários de estresse em tempo real.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Slide 4: Gráfico Dispersão (Tableau) -->
+<div class="slide-container" id="slide4">
+    <h2 class="slide-title">Validação da Tese: Correlação</h2>
+    <div class="two-column">
+        <div>
+            <h3>Matriz de Dispersão</h3>
+            <p>Este gráfico correlaciona o preço do <strong>Petróleo Brent (Eixo X)</strong> com o <strong>Etanol (Eixo Y)</strong> ao longo de 10 anos.</p>
+            <ul>
+                <li><strong>Insight:</strong> Observa-se uma correlação linear positiva forte. A concentração dos pontos forma uma tendência ascendente clara.</li>
+                <li><strong>Conclusão:</strong> O mercado de etanol não é isolado; ele responde matematicamente aos choques de energia globais. O petróleo é o principal driver de preço.</li>
+            </ul>
+        </div>
+        <div class="image-wrapper">
+            <!-- AQUI: Certifique-se que o arquivo scatter.png está na pasta images -->
+            <img src="images/scatter.png" alt="Gráfico de dispersão">
+        </div>
+    </div>
+</div>
+
+<!-- Slide 5: Gráfico Linhas (Tableau) -->
+<div class="slide-container" id="slide5">
+    <h2 class="slide-title">Dinâmica Temporal & Sincronia</h2>
+    <div class="two-column">
+        <div>
+            <h3>Análise de Paridade (2015-2025)</h3>
+            <p>Visualização da evolução mensal comparativa em Eixo Duplo.</p>
+            <ul>
+                <li><strong>Sincronia:</strong> As curvas apresentam movimentos quase simultâneos. A linha cinza (Petróleo) frequentemente antecipa a tendência da linha verde (Etanol).</li>
+                <li><strong>Oportunidade:</strong> Os momentos de distanciamento entre as linhas (spread) representam janelas de arbitragem identificadas pelo modelo.</li>
+            </ul>
+        </div>
+        <div class="image-wrapper">
+            <!-- AQUI: Certifique-se que o arquivo linhas.png está na pasta images -->
+            <img src="images/linhas.png" alt="Gráfico de linha dupla">
+        </div>
+    </div>
+</div>
+
+<!-- Slide 6: O Dashboard (Streamlit) -->
+<div class="slide-container bleed-image-layout" id="slide6">
+    <div class="content-container">
+        <h2 class="slide-title">Simulador de Cenários</h2>
+        <p>Transformamos o modelo matemático em um produto de software.</p>
+        <p>O Dashboard permite que gestores simulem:</p>
+        <ul>
+            <li>"E se o Petróleo subir para $100?"</li>
+            <li>"Qual o impacto da entressafra no preço?"</li>
+        </ul>
+        <p style="margin-top: 20px;">
+            <span class="code-text">Status: Online</span> <span class="code-text">Python + Streamlit</span>
+        </p>
+    </div>
+    <div class="image-container">
+        <!-- AQUI: Certifique-se que o arquivo dashboard.png está na pasta images -->
+        <img class="bleed-image-side" src="images/dashboard.png" alt="Interface do Dashboard">
+    </div>
+</div>
+
+<!-- Slide 7: Conclusão -->
+<div class="slide-container" id="slide7">
+    <div class="qa-layout">
+        <p style="color: #deff9a; letter-spacing: 2px; font-weight: 700;">CONCLUSÃO</p>
+        <h1>97% de Precisão</h1>
+        <p style="max-width: 800px; margin: 0 auto;">
+            O projeto entregou uma ferramenta funcional capaz de reduzir a incerteza na tomada de decisão de trading de biocombustíveis.
+        </p>
+        <div style="margin-top: 60px;">
+            <p style="font-size: 18px; color: #888;">Disponível no GitHub: /previsao-etanol-ia</p>
+            <h3>Obrigado!</h3>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>     
+
