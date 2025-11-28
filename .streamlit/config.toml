@@ -1,0 +1,31 @@
+[theme]
+# Cor principal (Botões, Sliders, Destaques) - Verde Etanol Neon
+primaryColor = "#00FF7F"
+
+# Cor do Fundo Geral - Cinza Chumbo Profundo (Estilo Bloomberg Terminal)
+backgroundColor = "#0E1117"
+
+# Cor do Fundo da Barra Lateral - Um pouco mais claro para contraste
+secondaryBackgroundColor = "#262730"
+
+# Cor do Texto - Branco Gelo
+textColor = "#FAFAFA"
+
+# Fonte do Texto - Moderna e Limpa
+font = "sans serif"
+
+[server]
+# Isso ajuda a esconder menus de desenvolvimento no site final
+headless = true
+```
+
+### **Passo 3: Salvar e Enviar (Deploy Automático)**
+
+Assim que você subir esse arquivo para o GitHub, o Streamlit Cloud vai perceber a mudança e atualizar o site sozinho em alguns minutos.
+
+No Terminal do VS Code:
+
+```bash
+git add .
+git commit -m "Novo Design Dark Mode"
+git push
