@@ -26,7 +26,6 @@ st.markdown("---")
 
 @st.cache_data
 def carregar_dados_historicos():
-    """Carrega os dados processados para treino do modelo."""
     try:
         df = pd.read_csv('data/processed/dataset_consolidado.csv', index_col=0, parse_dates=True)
         return df
@@ -35,10 +34,6 @@ def carregar_dados_historicos():
         return None
 
 def obter_cotacoes_hoje():
-    """
-    Busca os preços EM TEMPO REAL do Yahoo Finance.
-    Retorna um dicionário com valor atual e variação percentual.
-    """
     # Tickers: Petróleo Brent, Dólar, Açúcar, Milho (Correlato)
     tickers = {
         'Petróleo Brent': 'BZ=F',
