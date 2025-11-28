@@ -4,6 +4,8 @@ import numpy as np
 import plotly.express as px
 import yfinance as yf
 from sklearn.ensemble import RandomForestRegressor
+import base64
+import os
 
 # ==============================================================================
 # 1. CONFIGURAÇÃO DA PÁGINA E DESIGN "SUCRO-PREMIUM"
@@ -15,28 +17,59 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# CSS CUSTOMIZADO (Estética de Vidro + Fundo de Cana)
-st.markdown("""
+# --- FUNÇÃO PARA CARREGAR IMAGEM LOCAL ---
+def get_img_as_base64(file_path):
+    """Lê uma imagem local e converte para base64 para usar no CSS."""
+    # Tenta encontrar a imagem na raiz ou subindo um nível (para funcionar local e no cloud)
+    possible_paths = [file_path, os.path.join("..", file_path)]
+    
+    for path in possible_paths:
+        if os.path.exists(path):
+            try:
+                with open(path, "rb") as f:
+                    data = f.read()
+                return base64.b64encode(data).decode()
+            except Exception as e:
+                print(f"Erro ao ler o arquivo de imagem: {e}")
+    
+    return None
+
+# Define a imagem de fundo
+img_filename = "fundo_cana.jpg" # Nome do arquivo que você salvou na raiz do projeto
+img_base64 = get_img_as_base64(img_filename)
+
+# Se conseguir ler a imagem local, usa ela. Senão, usa uma online como fallback.
+if img_base64:
+    bg_image_url = f"data:image/jpg;base64,{img_base64}"
+else:
+    # Fallback para a imagem online antiga se a local não for encontrada
+    bg_image_url = "https://images.unsplash.com/photo-1633004147966-c1713534327d?q=80&w=1920&auto=format&fit=crop"
+    # st.warning(f"A imagem '{img_filename}' não foi encontrada na pasta do projeto. Usando fundo padrão.")
+
+
+# CSS CUSTOMIZADO (Estética de Vidro + Fundo de Cana Local)
+# Usamos f-string (f""") para inserir a variável bg_image_url no CSS
+st.markdown(f"""
 <style>
-    /* 1. Imagem de Fundo (Canavial Autêntico) */
-    [data-testid="stAppViewContainer"] {
-        /* Imagem de canavial ao pôr do sol, escurecida */
+    /* 1. Imagem de Fundo (Sua Imagem) */
+    [data-testid="stAppViewContainer"] {{
+        /* Imagem de fundo com gradiente escuro para melhorar leitura */
         background-image: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.9)), 
-                          url("https://images.unsplash.com/photo-1633004147966-c1713534327d?q=80&w=1920&auto=format&fit=crop");
+                          url("{bg_image_url}");
         background-size: cover;
         background-position: center;
         background-attachment: fixed;
-    }
+    }}
 
     /* 2. Barra Lateral (Glassmorphism Escuro) */
-    [data-testid="stSidebar"] {
+    [data-testid="stSidebar"] {{
         background-color: rgba(10, 15, 10, 0.85);
         backdrop-filter: blur(10px);
         border-right: 1px solid rgba(0, 255, 127, 0.1);
-    }
+    }}
 
     /* 3. Métricas com Efeito de Vidro */
-    div[data-testid="stMetric"] {
+    div[data-testid="stMetric"] {{
         background-color: rgba(30, 30, 30, 0.6);
         backdrop-filter: blur(10px);
         border: 1px solid rgba(255, 255, 255, 0.05);
@@ -44,29 +77,29 @@ st.markdown("""
         border-radius: 12px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         transition: transform 0.2s;
-    }
-    div[data-testid="stMetric"]:hover {
+    }}
+    div[data-testid="stMetric"]:hover {{
         transform: translateY(-5px);
         border-color: #00FF7F;
         background-color: rgba(30, 30, 30, 0.8);
-    }
+    }}
     
     /* 4. Títulos das Métricas */
-    div[data-testid="stMetricLabel"] {
+    div[data-testid="stMetricLabel"] {{
         color: #A0A0A0 !important;
         font-size: 0.9rem !important;
         font-weight: 500;
-    }
+    }}
 
     /* 5. Valores das Métricas */
-    div[data-testid="stMetricValue"] {
+    div[data-testid="stMetricValue"] {{
         font-size: 1.5rem !important;
         color: #FFFFFF !important;
         font-weight: 700;
-    }
+    }}
 
     /* 6. Botões Estilizados (Verde Cana) */
-    .stButton > button {
+    .stButton > button {{
         background-color: #00FF7F;
         color: #002200;
         font-weight: 800;
@@ -76,30 +109,30 @@ st.markdown("""
         text-transform: uppercase;
         letter-spacing: 1px;
         transition: all 0.3s ease;
-    }
-    .stButton > button:hover {
+    }}
+    .stButton > button:hover {{
         background-color: #33FF99;
         box-shadow: 0 0 15px rgba(0, 255, 127, 0.5);
         color: #000000;
-    }
+    }}
 
     /* 7. Abas (Tabs) */
-    .stTabs [data-baseweb="tab-list"] {
+    .stTabs [data-baseweb="tab-list"] {{
         gap: 15px;
         border-bottom: none;
-    }
-    .stTabs [data-baseweb="tab"] {
+    }}
+    .stTabs [data-baseweb="tab"] {{
         background-color: rgba(255,255,255,0.03);
         border-radius: 8px;
         padding: 10px 25px;
         color: #CCCCCC;
         border: 1px solid transparent;
-    }
-    .stTabs [aria-selected="true"] {
+    }}
+    .stTabs [aria-selected="true"] {{
         background-color: rgba(0, 255, 127, 0.1) !important;
         color: #00FF7F !important;
         border-color: #00FF7F !important;
-    }
+    }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -110,6 +143,7 @@ st.markdown("""
 @st.cache_data
 def carregar_dados_historicos():
     try:
+        # Tenta carregar o CSV.
         df = pd.read_csv('data/processed/dataset_consolidado.csv', index_col=0, parse_dates=True)
         return df
     except FileNotFoundError:
@@ -329,3 +363,13 @@ with tab3:
             font=dict(color="white")
         )
         st.plotly_chart(fig_scatter, use_container_width=True)
+```
+
+### **Finalizando:**
+
+1.  Salve o arquivo `src/app.py`.
+2.  No terminal, faça o envio para o GitHub:
+    ```bash
+    git add .
+    git commit -m "Novo fundo com imagem local"
+    git push
