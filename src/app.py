@@ -198,21 +198,6 @@ with tab3:
     """)
 
 
-### **O Que Mudou (E Por Que Ficou Melhor):**
-
-1.  **Função `obter_cotacoes_hoje()`:**
-    * Agora, toda vez que alguém abre o site, o Python vai no Yahoo Finance e pega o preço **deste exato segundo** do Petróleo, Dólar e Açúcar.
-    * **Benefício:** O usuário vê valor imediato. "Ah, o petróleo caiu hoje".
-
-2.  **`st.metric` (As caixas com números grandes):**
-    * Usei o componente visual `st.metric` no topo. Ele mostra o preço grande e, embaixo, verdinho ou vermelhinho, quanto variou em relação a ontem. Isso é puro visual de mercado financeiro.
-
-3.  **Abas (`st.tabs`):**
-    * Escondemos os gráficos históricos na Aba 2.
-    * O simulador (o "brinquedo principal") ficou na Aba 1, limpo e direto ao ponto.
-
-4.  **Botões de Ação:**
-    * Adicionei mensagens claras: "📢 OPORTUNIDADE DE COMPRA" ou "VENDA" baseadas na conta matemática. Isso ajuda o usuário a tomar decisão.
 
 
 ### **Como Atualizar:**
