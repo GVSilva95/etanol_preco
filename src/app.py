@@ -197,5 +197,5 @@ with tab3:
     **Desenvolvido por Giovanni Silva.**
     """)
 
-    ```bash
+   
     (git add ., git commit -m "Novo dashboard", git push
