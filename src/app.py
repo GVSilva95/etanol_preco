@@ -6,20 +6,98 @@ import yfinance as yf
 from sklearn.ensemble import RandomForestRegressor
 
 # ==============================================================================
-# 1. CONFIGURAÇÃO DA PÁGINA E DESIGN
+# 1. CONFIGURAÇÃO DA PÁGINA E DESIGN "SUCRO-PREMIUM"
 # ==============================================================================
 st.set_page_config(
     page_title="Etanol Intelligence Pro",
-    page_icon="⛽",
+    page_icon="🎋",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Estilo CSS personalizado para métricas
+# CSS CUSTOMIZADO (Estética de Vidro + Fundo de Cana)
 st.markdown("""
 <style>
+    /* 1. Imagem de Fundo (Canavial Escuro) */
+    [data-testid="stAppViewContainer"] {
+        background-image: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.9)), 
+                          url("https://images.unsplash.com/photo-1605000797499-95a51c5269ae?q=80&w=1920&auto=format&fit=crop");
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+    }
+
+    /* 2. Barra Lateral (Glassmorphism Escuro) */
+    [data-testid="stSidebar"] {
+        background-color: rgba(10, 15, 10, 0.85);
+        backdrop-filter: blur(10px);
+        border-right: 1px solid rgba(0, 255, 127, 0.1);
+    }
+
+    /* 3. Métricas com Efeito de Vidro */
+    div[data-testid="stMetric"] {
+        background-color: rgba(30, 30, 30, 0.6);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 15px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s;
+    }
+    div[data-testid="stMetric"]:hover {
+        transform: translateY(-5px);
+        border-color: #00FF7F;
+        background-color: rgba(30, 30, 30, 0.8);
+    }
+    
+    /* 4. Títulos das Métricas */
+    div[data-testid="stMetricLabel"] {
+        color: #A0A0A0 !important;
+        font-size: 0.9rem !important;
+        font-weight: 500;
+    }
+
+    /* 5. Valores das Métricas */
     div[data-testid="stMetricValue"] {
-        font-size: 1.8rem;
+        font-size: 1.5rem !important;
+        color: #FFFFFF !important;
+        font-weight: 700;
+    }
+
+    /* 6. Botões Estilizados (Verde Cana) */
+    .stButton > button {
+        background-color: #00FF7F;
+        color: #002200;
+        font-weight: 800;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.3s ease;
+    }
+    .stButton > button:hover {
+        background-color: #33FF99;
+        box-shadow: 0 0 15px rgba(0, 255, 127, 0.5);
+        color: #000000;
+    }
+
+    /* 7. Abas (Tabs) */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 15px;
+        border-bottom: none;
+    }
+    .stTabs [data-baseweb="tab"] {
+        background-color: rgba(255,255,255,0.03);
+        border-radius: 8px;
+        padding: 10px 25px;
+        color: #CCCCCC;
+        border: 1px solid transparent;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: rgba(0, 255, 127, 0.1) !important;
+        color: #00FF7F !important;
+        border-color: #00FF7F !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -31,7 +109,6 @@ st.markdown("""
 @st.cache_data
 def carregar_dados_historicos():
     try:
-        # Tenta carregar o CSV.
         df = pd.read_csv('data/processed/dataset_consolidado.csv', index_col=0, parse_dates=True)
         return df
     except FileNotFoundError:
@@ -64,24 +141,18 @@ def obter_cotacoes_hoje():
         pass
     return dados_live
 
-# Inicialização
 df = carregar_dados_historicos()
 cotacoes = obter_cotacoes_hoje()
 
-# Treinamento do Modelo
 @st.cache_resource
 def treinar_modelo(df):
     if df is None: return None, 0
-    
-    # Garante a feature sazonal
     if 'Mes' not in df.columns:
         df['Mes'] = df.index.month
     
     df_clean = df.dropna()
-    # Features usadas no treino
     features = ['Petroleo_Brent', 'Dolar', 'Acucar']
     
-    # Se o modelo foi treinado com 'Mes', precisamos garantir que ele entre
     X = df_clean[features + ['Mes']]
     y = df_clean['Preco_Etanol']
     
@@ -104,26 +175,39 @@ if df is not None:
 # 3. BARRA LATERAL (Sidebar)
 # ==============================================================================
 with st.sidebar:
-    st.image("https://images.unsplash.com/photo-1597850239592-3d7790c50720?q=80&w=400&auto=format&fit=crop", caption="Setor Sucroenergético")
+    # Imagem de Capa (Cana de Açúcar Close-up)
+    st.image("https://images.unsplash.com/photo-1596739268306-692795c7394c?q=80&w=400&auto=format&fit=crop", caption="Agro Business Intelligence")
+    
     st.header("Painel de Controle")
-    st.info("Este dashboard utiliza IA para calcular o preço justo do etanol com base em commodities globais.")
+    st.info("Ferramenta avançada para precificação de Etanol Hidratado (Paulínia/SP).")
+    
     st.markdown("---")
+    
     if model:
-        st.write(f"**Modelo:** Random Forest")
-        st.write(f"**Acurácia:** {score:.1%}")
-        st.write(f"**Dados até:** {data_ref}")
+        col_kpi1, col_kpi2 = st.columns(2)
+        with col_kpi1:
+            st.metric("Modelo", "R. Forest")
+        with col_kpi2:
+            st.metric("Precisão", f"{score:.1%}")
+            
+        st.caption(f"📅 Dados atualizados até: {data_ref}")
+    
+    st.markdown("---")
+    st.markdown("### 👨‍💻 Desenvolvedor")
+    st.markdown("**Giovanni Silva**")
+    st.caption("Especialista em Inteligência de Mercado")
 
 # ==============================================================================
 # 4. CORPO PRINCIPAL
 # ==============================================================================
 
-st.title("⛽ Etanol Intelligence: Global Dashboard")
-st.markdown("### Monitorização de Mercado em Tempo Real")
+st.title("⛽ Etanol Intelligence Pro")
+st.markdown("##### 💹 Monitoramento Estratégico de Commodities & Biocombustíveis")
+st.markdown("---")
 
-# --- BANNER DE COTAÇÕES (5 Colunas agora) ---
+# --- BANNER DE COTAÇÕES ---
 cols = st.columns(5)
 
-# Função auxiliar para exibir métrica segura
 def exibir_metrica(col, titulo, chave, prefixo="US$"):
     dado = cotacoes.get(chave, {})
     valor = dado.get('valor', 0.0)
@@ -140,17 +224,17 @@ if cotacoes:
 st.markdown("---")
 
 # --- ABAS DE NAVEGAÇÃO ---
-tab1, tab2, tab3 = st.tabs(["🧮 Simulador de Preço", "🌍 Contexto Global", "📊 Gráficos Históricos"])
+tab1, tab2, tab3 = st.tabs(["🧮 Simulador de Valuation", "🌍 Contexto de Mercado", "📊 Análise Técnica"])
 
 # === ABA 1: SIMULADOR ===
 with tab1:
-    st.header("Simulador de Paridade & Preço Justo")
+    st.header("Simulador de Paridade & Arbitragem")
     
     if model:
         c1, c2 = st.columns([1, 2])
         
         with c1:
-            st.subheader("Cenário")
+            st.markdown("### 1. Definir Cenário")
             
             # Pega valores padrão
             def get_val(key, col):
@@ -158,17 +242,18 @@ with tab1:
                 val_hist = float(df[col].iloc[-1]) if df is not None else 0.0
                 return val_live if val_live > 0 else val_hist
 
-            petroleo = st.slider("Petróleo Brent (US$)", 40.0, 150.0, get_val('Petróleo Brent', 'Petroleo_Brent'))
-            dolar = st.slider("Dólar (R$)", 3.0, 7.0, get_val('Dólar (BRL)', 'Dolar'))
-            acucar = st.slider("Açúcar (cents/lb)", 10.0, 40.0, get_val('Açúcar (NY)', 'Acucar'))
-            
-            idx_mes = 0
-            if df is not None:
-                idx_mes = int(df.index[-1].month - 1)
-            mes = st.selectbox("Mês de Safra", range(1, 13), index=idx_mes)
+            with st.container(border=True):
+                petroleo = st.slider("Petróleo Brent (US$)", 40.0, 150.0, get_val('Petróleo Brent', 'Petroleo_Brent'))
+                dolar = st.slider("Dólar (R$)", 3.0, 7.0, get_val('Dólar (BRL)', 'Dolar'))
+                acucar = st.slider("Açúcar (cents/lb)", 10.0, 40.0, get_val('Açúcar (NY)', 'Acucar'))
+                mes = st.selectbox("Mês de Safra", range(1, 13), index=int(df.index[-1].month - 1) if df is not None else 0)
+                
+                calcular = st.button("🔄 Calcular Preço Justo", use_container_width=True)
 
         with c2:
-            # Previsão
+            st.markdown("### 2. Análise de Preço Justo")
+            
+            # Previsão (Reativa)
             cenario = pd.DataFrame({
                 'Petroleo_Brent': [petroleo],
                 'Dolar': [dolar],
@@ -178,54 +263,55 @@ with tab1:
             preco_justo = model.predict(cenario)[0]
             diff = preco_justo - ultimo_preco
             
-            st.subheader("Resultado da IA")
+            # Cards de Resultado
             res_col1, res_col2 = st.columns(2)
+            with res_col1:
+                st.info("🎯 Preço Justo (Modelo)")
+                st.metric("Fair Value", f"R$ {preco_justo:.2f}")
             
-            res_col1.metric("Preço Justo (Paulínia)", f"R$ {preco_justo:.2f}")
-            res_col2.metric("Diferença Mercado", f"R$ {diff:.2f}", delta_color="normal")
+            with res_col2:
+                st.info("📉 Spread vs Mercado")
+                st.metric("Diferença", f"R$ {diff:.2f}", delta_color="normal")
             
+            st.markdown("#### Veredito da IA:")
             if preco_justo > ultimo_preco:
-                st.success("📢 **SINAL DE COMPRA:** O mercado está abaixo do preço justo calculado.")
+                st.success(f"🚀 **OPORTUNIDADE DE COMPRA (UPSIDE)**\n\nO modelo indica que o Etanol está descontado frente aos fundamentos globais.")
             else:
-                st.error("📢 **SINAL DE VENDA:** O mercado está acima do preço justo calculado.")
-                
-            # Gráfico de termómetro simples com barra de progresso
-            st.write("Termómetro de Preço:")
-            percentual = min(max((preco_justo / 4000) * 100, 0), 100) # Normalizando para barra 0-100
-            st.progress(int(percentual))
-            st.caption("Escala visual de preço (0 a R$ 4.000)")
-    else:
-        st.warning("A aguardar dados para carregar o simulador...")
+                st.error(f"🔻 **OPORTUNIDADE DE VENDA (DOWNSIDE)**\n\nO Etanol está caro. O modelo sugere correção de preço para baixo.")
+            
+            # Gráfico de termómetro
+            st.caption(f"Preço Atual de Mercado (CEPEA): R$ {ultimo_preco:.2f}")
+            progress_val = min(max((preco_justo / 4000), 0.0), 1.0)
+            st.progress(progress_val)
 
-# === ABA 2: CONTEXTO GLOBAL (NOVO!) ===
+# === ABA 2: CONTEXTO GLOBAL ===
 with tab2:
-    st.header("Panorama Global do Etanol")
-    st.markdown("O preço do etanol brasileiro não depende apenas de nós. Entenda os grandes players:")
+    st.header("Panorama Global do Setor")
     
     col_g1, col_g2 = st.columns(2)
     
     with col_g1:
-        st.image("https://images.unsplash.com/photo-1632219782522-a7229a438722?q=80&w=600&auto=format&fit=crop", caption="Milho nos EUA")
-        st.subheader("🇺🇸 Estados Unidos (Milho)")
+        # IMAGEM: Indústria de Etanol (Para não mostrar plantação de milho)
+        st.image("https://images.unsplash.com/photo-1616401784845-180882ba9ba8?q=80&w=600&auto=format&fit=crop", use_container_width=True)
+        st.subheader("🇺🇸 Estados Unidos (Indústria)")
         st.write("""
-        * **Matéria-prima:** Milho (Corn Ethanol).
-        * **Influência:** É o maior produtor mundial. Se a safra de milho nos EUA quebra, o preço do etanol global sobe.
-        * **Relação:** Acompanhe a cotação do Milho (ZC=F) no topo da página.
+        Os EUA são os maiores produtores mundiais, utilizando principalmente **Milho** como matéria-prima. 
+        A cotação do milho em Chicago afeta indiretamente o Brasil através da paridade de exportação.
         """)
         
     with col_g2:
-        st.image("https://images.unsplash.com/photo-1605000797499-95a51c5269ae?q=80&w=600&auto=format&fit=crop", caption="Cana na Índia e Brasil")
-        st.subheader("🇮🇳 Índia & 🇧🇷 Brasil (Cana)")
+        # IMAGEM: Colheita de Cana (Brasil)
+        st.image("https://images.unsplash.com/photo-1533596593406-3c224213793e?q=80&w=600&auto=format&fit=crop", use_container_width=True)
+        st.subheader("🇧🇷 Brasil & Índia (Cana)")
         st.write("""
-        * **Matéria-prima:** Cana-de-Açúcar.
-        * **Índia:** Está a aumentar a mistura de etanol na gasolina (E20), o que retira açúcar do mercado global.
-        * **Brasil:** O mix produtivo (Açúcar vs Etanol) define a oferta. Se o açúcar paga mais, produz-se menos etanol.
+        No Brasil, a **Cana-de-Açúcar** domina. A decisão das usinas entre produzir Açúcar ou Etanol (Mix Produtivo) 
+        é o principal driver de oferta interna, balizado pelos preços internacionais do Açúcar em NY.
         """)
 
 # === ABA 3: GRÁFICOS ===
 with tab3:
     if df is not None:
-        st.header("Correlação Histórica (10 Anos)")
+        st.header("Análise Técnica Histórica")
         
         # Gráfico Scatter
         fig_scatter = px.scatter(
@@ -233,14 +319,12 @@ with tab3:
             color=df.index.year,
             size_max=10,
             color_continuous_scale='Turbo',
-            title="Matriz de Dispersão: Petróleo vs Etanol"
+            template='plotly_dark',
+            title="Correlação: Petróleo x Etanol (2015-2025)"
+        )
+        fig_scatter.update_layout(
+            paper_bgcolor='rgba(0,0,0,0)', 
+            plot_bgcolor='rgba(0,0,0,0)',
+            font=dict(color="white")
         )
         st.plotly_chart(fig_scatter, use_container_width=True)
-        
-        # Gráfico de Linha Comparativo (Normalizado)
-        st.subheader("Tendência Relativa (Normalizada)")
-        df_norm = df[['Preco_Etanol', 'Petroleo_Brent']].copy()
-        df_norm = df_norm / df_norm.iloc[0] * 100 # Base 100
-        
-        fig_line = px.line(df_norm, title="Quem subiu mais? (Base 100 = Início da Série)")
-        st.plotly_chart(fig_line, use_container_width=True)
