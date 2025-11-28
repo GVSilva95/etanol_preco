@@ -363,13 +363,4 @@ with tab3:
             font=dict(color="white")
         )
         st.plotly_chart(fig_scatter, use_container_width=True)
-```
 
-### **Finalizando:**
-
-1.  Salve o arquivo `src/app.py`.
-2.  No terminal, faça o envio para o GitHub:
-    ```bash
-    git add .
-    git commit -m "Novo fundo com imagem local"
-    git push
