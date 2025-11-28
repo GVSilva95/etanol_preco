@@ -203,8 +203,6 @@ with tab3:
     """)
 
 
----
-
 ### **O Que Mudou (E Por Que Ficou Melhor):**
 
 1.  **Função `obter_cotacoes_hoje()`:**
@@ -221,7 +219,6 @@ with tab3:
 4.  **Botões de Ação:**
     * Adicionei mensagens claras: "📢 OPORTUNIDADE DE COMPRA" ou "VENDA" baseadas na conta matemática. Isso ajuda o usuário a tomar decisão.
 
----
 
 ### **Como Atualizar:**
 
