@@ -2,23 +2,27 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
-import plotly.graph_objects as go
 import yfinance as yf
 from sklearn.ensemble import RandomForestRegressor
 
 # ==============================================================================
-# 1. CONFIGURAÇÃO DA PÁGINA
+# 1. CONFIGURAÇÃO DA PÁGINA E DESIGN
 # ==============================================================================
 st.set_page_config(
-    page_title="Etanol Intelligence",
+    page_title="Etanol Intelligence Pro",
     page_icon="⛽",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Título Principal com Estilo
-st.title("⛽ Etanol Intelligence: Dashboard & Valuation")
-st.markdown("---")
+# Estilo CSS personalizado para métricas
+st.markdown("""
+<style>
+    div[data-testid="stMetricValue"] {
+        font-size: 1.8rem;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # ==============================================================================
 # 2. FUNÇÕES DE CARREGAMENTO (Backend)
@@ -27,174 +31,216 @@ st.markdown("---")
 @st.cache_data
 def carregar_dados_historicos():
     try:
+        # Tenta carregar o CSV.
         df = pd.read_csv('data/processed/dataset_consolidado.csv', index_col=0, parse_dates=True)
         return df
-    except:
-        st.error("Erro: Base de dados histórica não encontrada.")
+    except FileNotFoundError:
         return None
 
 def obter_cotacoes_hoje():
-    # Tickers: Petróleo Brent, Dólar, Açúcar, Milho (Correlato)
+    """Busca cotações em tempo real de múltiplos ativos."""
     tickers = {
         'Petróleo Brent': 'BZ=F',
-        'Dólar (USD/BRL)': 'BRL=X',
-        'Açúcar No.11': 'SB=F',
-        'Milho (Corn)': 'ZC=F'
+        'Dólar (BRL)': 'BRL=X',
+        'Açúcar (NY)': 'SB=F',
+        'Milho (Chicago)': 'ZC=F',
+        'Etanol (Chicago)': 'CU=F'
     }
     
     dados_live = {}
-    
     try:
-        # Baixa dados de hoje e ontem para calcular variação
         for nome, ticker in tickers.items():
             ticker_obj = yf.Ticker(ticker)
-            hist = ticker_obj.history(period="5d") # Pega 5 dias para garantir
+            hist = ticker_obj.history(period="5d")
             
             if len(hist) > 1:
-                preco_atual = hist['Close'].iloc[-1]
-                preco_anterior = hist['Close'].iloc[-2]
-                delta = preco_atual - preco_anterior
-                delta_pct = (delta / preco_anterior) * 100
-                
-                dados_live[nome] = {
-                    'valor': preco_atual,
-                    'delta': delta
-                }
+                atual = hist['Close'].iloc[-1]
+                anterior = hist['Close'].iloc[-2]
+                delta = atual - anterior
+                dados_live[nome] = {'valor': atual, 'delta': delta}
             else:
                 dados_live[nome] = {'valor': 0.0, 'delta': 0.0}
-                
-    except Exception as e:
-        st.warning(f"Não foi possível buscar cotações online agora. ({e})")
-    
+    except:
+        pass
     return dados_live
 
-# Carregando os dados
+# Inicialização
 df = carregar_dados_historicos()
 cotacoes = obter_cotacoes_hoje()
 
-# Treinando o Modelo (Cacheado para ser rápido)
+# Treinamento do Modelo
 @st.cache_resource
 def treinar_modelo(df):
-    features_base = ['Petroleo_Brent', 'Dolar', 'Acucar']
-    target = 'Preco_Etanol'
+    if df is None: return None, 0
     
-    # Criando feature sazonalidade se não existir
+    # Garante a feature sazonal
     if 'Mes' not in df.columns:
         df['Mes'] = df.index.month
-        
-    X = df[features_base + ['Mes']]
-    y = df[target]
+    
+    df_clean = df.dropna()
+    # Features usadas no treino
+    features = ['Petroleo_Brent', 'Dolar', 'Acucar']
+    
+    # Se o modelo foi treinado com 'Mes', precisamos garantir que ele entre
+    X = df_clean[features + ['Mes']]
+    y = df_clean['Preco_Etanol']
     
     model = RandomForestRegressor(n_estimators=200, max_depth=12, random_state=42)
     model.fit(X, y)
     score = model.score(X, y)
     return model, score
 
+model = None
+score = 0
+ultimo_preco = 0
+data_ref = "N/A"
+
 if df is not None:
     model, score = treinar_modelo(df)
-    ultimo_preco_etanol = df['Preco_Etanol'].iloc[-1]
-    data_etanol = df.index[-1].strftime('%d/%m/%Y')
+    ultimo_preco = df['Preco_Etanol'].iloc[-1]
+    data_ref = df.index[-1].strftime('%d/%m/%Y')
 
 # ==============================================================================
-# 3. INTERFACE VISUAL (Frontend)
+# 3. BARRA LATERAL (Sidebar)
+# ==============================================================================
+with st.sidebar:
+    st.image("https://images.unsplash.com/photo-1597850239592-3d7790c50720?q=80&w=400&auto=format&fit=crop", caption="Setor Sucroenergético")
+    st.header("Painel de Controle")
+    st.info("Este dashboard utiliza IA para calcular o preço justo do etanol com base em commodities globais.")
+    st.markdown("---")
+    if model:
+        st.write(f"**Modelo:** Random Forest")
+        st.write(f"**Acurácia:** {score:.1%}")
+        st.write(f"**Dados até:** {data_ref}")
+
+# ==============================================================================
+# 4. CORPO PRINCIPAL
 # ==============================================================================
 
-# --- BANNER DE COTAÇÕES (Topo da Página) ---
-# Mostra os preços do mercado internacional AGORA
-st.subheader("🌍 Mercado Agora (Cotações em Tempo Real)")
-col1, col2, col3, col4 = st.columns(4)
+st.title("⛽ Etanol Intelligence: Global Dashboard")
+st.markdown("### Monitorização de Mercado em Tempo Real")
+
+# --- BANNER DE COTAÇÕES (5 Colunas agora) ---
+cols = st.columns(5)
+
+# Função auxiliar para exibir métrica segura
+def exibir_metrica(col, titulo, chave, prefixo="US$"):
+    dado = cotacoes.get(chave, {})
+    valor = dado.get('valor', 0.0)
+    delta = dado.get('delta', 0.0)
+    col.metric(titulo, f"{prefixo} {valor:.2f}", f"{delta:.2f}")
 
 if cotacoes:
-    with col1:
-        st.metric("🛢️ Petróleo Brent", 
-                  f"US$ {cotacoes.get('Petróleo Brent', {}).get('valor', 0):.2f}", 
-                  f"{cotacoes.get('Petróleo Brent', {}).get('delta', 0):.2f}")
-    with col2:
-        st.metric("💵 Dólar", 
-                  f"R$ {cotacoes.get('Dólar (USD/BRL)', {}).get('valor', 0):.3f}", 
-                  f"{cotacoes.get('Dólar (USD/BRL)', {}).get('delta', 0):.3f}")
-    with col3:
-        st.metric("🍬 Açúcar (NY)", 
-                  f"US$ {cotacoes.get('Açúcar No.11', {}).get('valor', 0):.2f}", 
-                  f"{cotacoes.get('Açúcar No.11', {}).get('delta', 0):.2f}")
-    with col4:
-        # Etanol não tem ticker live fácil, usamos o último fechamento do CEPEA
-        st.metric(f"⛽ Etanol (CEPEA - {data_etanol})", 
-                  f"R$ {ultimo_preco_etanol:.2f}", 
-                  help="Último fechamento disponível na base de dados CEPEA")
+    exibir_metrica(cols[0], "🛢️ Petróleo", 'Petróleo Brent')
+    exibir_metrica(cols[1], "💵 Dólar", 'Dólar (BRL)', "R$")
+    exibir_metrica(cols[2], "🍬 Açúcar", 'Açúcar (NY)', "¢")
+    exibir_metrica(cols[3], "🌽 Milho", 'Milho (Chicago)', "¢")
+    exibir_metrica(cols[4], "🇺🇸 Etanol EUA", 'Etanol (Chicago)', "$")
 
 st.markdown("---")
 
-# --- SISTEMA DE ABAS ---
-tab1, tab2, tab3 = st.tabs(["🧮 Simulador de Preço Justo", "📈 Panorama Histórico", "ℹ️ Sobre o Modelo"])
+# --- ABAS DE NAVEGAÇÃO ---
+tab1, tab2, tab3 = st.tabs(["🧮 Simulador de Preço", "🌍 Contexto Global", "📊 Gráficos Históricos"])
 
-# === ABA 1: O SIMULADOR (Seu código original melhorado) ===
+# === ABA 1: SIMULADOR ===
 with tab1:
-    st.markdown("### 🤖 Calculadora de Valuation com IA")
-    st.info(f"O modelo de Inteligência Artificial tem uma precisão de **{score:.1%}** baseada em 10 anos de histórico.")
+    st.header("Simulador de Paridade & Preço Justo")
     
-    col_input, col_result = st.columns([1, 2])
-    
-    with col_input:
-        st.markdown("#### Premissas de Cenário")
+    if model:
+        c1, c2 = st.columns([1, 2])
         
-        # Valores iniciais pegando do Live ou do Histórico
-        val_petroleo = cotacoes.get('Petróleo Brent', {}).get('valor', df['Petroleo_Brent'].iloc[-1])
-        val_dolar = cotacoes.get('Dólar (USD/BRL)', {}).get('valor', df['Dolar'].iloc[-1])
-        val_acucar = cotacoes.get('Açúcar No.11', {}).get('valor', df['Acucar'].iloc[-1])
+        with c1:
+            st.subheader("Cenário")
+            
+            # Pega valores padrão
+            def get_val(key, col):
+                val_live = float(cotacoes.get(key, {}).get('valor', 0.0))
+                val_hist = float(df[col].iloc[-1]) if df is not None else 0.0
+                return val_live if val_live > 0 else val_hist
 
-        user_petroleo = st.slider("Petróleo Brent (US$)", 40.0, 150.0, float(val_petroleo))
-        user_dolar = st.slider("Dólar (R$)", 3.0, 7.0, float(val_dolar))
-        user_acucar = st.slider("Açúcar (cents/lb)", 10.0, 40.0, float(val_acucar))
-        user_mes = st.selectbox("Mês de Referência", range(1, 13), index=int(df.index[-1].month - 1))
+            petroleo = st.slider("Petróleo Brent (US$)", 40.0, 150.0, get_val('Petróleo Brent', 'Petroleo_Brent'))
+            dolar = st.slider("Dólar (R$)", 3.0, 7.0, get_val('Dólar (BRL)', 'Dolar'))
+            acucar = st.slider("Açúcar (cents/lb)", 10.0, 40.0, get_val('Açúcar (NY)', 'Acucar'))
+            
+            idx_mes = 0
+            if df is not None:
+                idx_mes = int(df.index[-1].month - 1)
+            mes = st.selectbox("Mês de Safra", range(1, 13), index=idx_mes)
 
-    with col_result:
-        # Previsão
-        cenario = pd.DataFrame({
-            'Petroleo_Brent': [user_petroleo],
-            'Dolar': [user_dolar],
-            'Acucar': [user_acucar],
-            'Mes': [user_mes]
-        })
-        preco_justo = model.predict(cenario)[0]
-        spread = preco_justo - ultimo_preco_etanol
-        
-        # Cartão de Resultado Grande
-        st.markdown("#### Resultado da Simulação")
-        
-        c1, c2 = st.columns(2)
-        c1.metric("Preço Justo (Fair Value)", f"R$ {preco_justo:.2f}", help="Preço sugerido pelo modelo matemático")
-        c2.metric("Potencial Upside/Downside", f"R$ {spread:.2f}", delta_color="normal")
-        
-        if preco_justo > ultimo_preco_etanol:
-            st.success(f"📢 **OPORTUNIDADE DE COMPRA:** O Etanol está barato. Deveria custar R$ {preco_justo:.2f}, mas está R$ {ultimo_preco_etanol:.2f}.")
-        else:
-            st.error(f"📢 **OPORTUNIDADE DE VENDA:** O Etanol está caro. O preço justo seria R$ {preco_justo:.2f}.")
+        with c2:
+            # Previsão
+            cenario = pd.DataFrame({
+                'Petroleo_Brent': [petroleo],
+                'Dolar': [dolar],
+                'Acucar': [acucar],
+                'Mes': [mes]
+            })
+            preco_justo = model.predict(cenario)[0]
+            diff = preco_justo - ultimo_preco
+            
+            st.subheader("Resultado da IA")
+            res_col1, res_col2 = st.columns(2)
+            
+            res_col1.metric("Preço Justo (Paulínia)", f"R$ {preco_justo:.2f}")
+            res_col2.metric("Diferença Mercado", f"R$ {diff:.2f}", delta_color="normal")
+            
+            if preco_justo > ultimo_preco:
+                st.success("📢 **SINAL DE COMPRA:** O mercado está abaixo do preço justo calculado.")
+            else:
+                st.error("📢 **SINAL DE VENDA:** O mercado está acima do preço justo calculado.")
+                
+            # Gráfico de termómetro simples com barra de progresso
+            st.write("Termómetro de Preço:")
+            percentual = min(max((preco_justo / 4000) * 100, 0), 100) # Normalizando para barra 0-100
+            st.progress(int(percentual))
+            st.caption("Escala visual de preço (0 a R$ 4.000)")
+    else:
+        st.warning("A aguardar dados para carregar o simulador...")
 
-# === ABA 2: GRÁFICOS ===
+# === ABA 2: CONTEXTO GLOBAL (NOVO!) ===
 with tab2:
-    st.markdown("### 📊 Correlações Históricas")
+    st.header("Panorama Global do Etanol")
+    st.markdown("O preço do etanol brasileiro não depende apenas de nós. Entenda os grandes players:")
     
-    # Gráfico interativo com Plotly
-    fig = px.scatter(df, x='Petroleo_Brent', y='Preco_Etanol', color=df.index.year,
-                     title="Correlação: Petróleo x Etanol (2015-2025)",
-                     labels={'Petroleo_Brent': 'Petróleo (US$)', 'Preco_Etanol': 'Etanol (R$)'},
-                     color_continuous_scale='Viridis')
-    st.plotly_chart(fig, use_container_width=True)
+    col_g1, col_g2 = st.columns(2)
     
-    st.markdown("Este gráfico comprova que, historicamente, aumentos no petróleo puxam o preço do etanol para cima.")
+    with col_g1:
+        st.image("https://images.unsplash.com/photo-1632219782522-a7229a438722?q=80&w=600&auto=format&fit=crop", caption="Milho nos EUA")
+        st.subheader("🇺🇸 Estados Unidos (Milho)")
+        st.write("""
+        * **Matéria-prima:** Milho (Corn Ethanol).
+        * **Influência:** É o maior produtor mundial. Se a safra de milho nos EUA quebra, o preço do etanol global sobe.
+        * **Relação:** Acompanhe a cotação do Milho (ZC=F) no topo da página.
+        """)
+        
+    with col_g2:
+        st.image("https://images.unsplash.com/photo-1605000797499-95a51c5269ae?q=80&w=600&auto=format&fit=crop", caption="Cana na Índia e Brasil")
+        st.subheader("🇮🇳 Índia & 🇧🇷 Brasil (Cana)")
+        st.write("""
+        * **Matéria-prima:** Cana-de-Açúcar.
+        * **Índia:** Está a aumentar a mistura de etanol na gasolina (E20), o que retira açúcar do mercado global.
+        * **Brasil:** O mix produtivo (Açúcar vs Etanol) define a oferta. Se o açúcar paga mais, produz-se menos etanol.
+        """)
 
-# === ABA 3: SOBRE ===
+# === ABA 3: GRÁFICOS ===
 with tab3:
-    st.markdown("""
-    ### Metodologia
-    Este projeto utiliza dados públicos para oferecer transparência ao mercado sucroenergético.
-    
-    * **Fonte de Dados:** CEPEA/ESALQ e Yahoo Finance API.
-    * **Modelo:** Random Forest Regressor (Machine Learning).
-    * **Atualização:** Os dados históricos vão até a última atualização do arquivo CSV. As cotações do topo são em tempo real (delay de 15 min).
-    
-    **Desenvolvido por Giovanni Silva.**
-    """)
-
-
+    if df is not None:
+        st.header("Correlação Histórica (10 Anos)")
+        
+        # Gráfico Scatter
+        fig_scatter = px.scatter(
+            df, x='Petroleo_Brent', y='Preco_Etanol', 
+            color=df.index.year,
+            size_max=10,
+            color_continuous_scale='Turbo',
+            title="Matriz de Dispersão: Petróleo vs Etanol"
+        )
+        st.plotly_chart(fig_scatter, use_container_width=True)
+        
+        # Gráfico de Linha Comparativo (Normalizado)
+        st.subheader("Tendência Relativa (Normalizada)")
+        df_norm = df[['Preco_Etanol', 'Petroleo_Brent']].copy()
+        df_norm = df_norm / df_norm.iloc[0] * 100 # Base 100
+        
+        fig_line = px.line(df_norm, title="Quem subiu mais? (Base 100 = Início da Série)")
+        st.plotly_chart(fig_line, use_container_width=True)
