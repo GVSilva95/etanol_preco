@@ -18,10 +18,11 @@ st.set_page_config(
 # CSS CUSTOMIZADO (Estética de Vidro + Fundo de Cana)
 st.markdown("""
 <style>
-    /* 1. Imagem de Fundo (Canavial Escuro) */
+    /* 1. Imagem de Fundo (Canavial Autêntico) */
     [data-testid="stAppViewContainer"] {
+        /* Imagem de canavial ao pôr do sol, escurecida */
         background-image: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.9)), 
-                          url("https://images.unsplash.com/photo-1605000797499-95a51c5269ae?q=80&w=1920&auto=format&fit=crop");
+                          url("https://images.unsplash.com/photo-1633004147966-c1713534327d?q=80&w=1920&auto=format&fit=crop");
         background-size: cover;
         background-position: center;
         background-attachment: fixed;
