@@ -184,9 +184,8 @@ def metric(col, label, key, prefix="", suffix=""):
 if market:
     metric(c1, "🛢️ Brent", 'Petróleo Brent', "US$ ")
     metric(c2, "💵 Dólar", 'Dólar (BRL)', "R$ ")
-    # AQUI ESTÁ A MUDANÇA: Troquei "¢" por "US$"
-    metric(c3, "🍬 Açúcar", 'Açúcar (NY)', "US$ ")
-    metric(c4, "🌽 Milho", 'Milho (Chicago)', "US$ ")
+    metric(c3, "🍬 Açúcar", 'Açúcar (NY)', "¢")
+    metric(c4, "🌽 Milho", 'Milho (Chicago)', "¢")
     metric(c5, "⛽ Gasolina", 'Gasolina RBOB', "US$ ")
     metric(c6, "🔥 Gás Nat.", 'Gás Natural', "US$ ")
     metric(c7, "🏦 Juros 10Y", 'Juros EUA 10Y', "", "%")
@@ -249,3 +248,14 @@ with tab3:
         fig = px.scatter(df, x='Petroleo_Brent', y='Preco_Etanol', color=df.index.year, title="Correlação Histórica", template="plotly_dark")
         fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig, use_container_width=True)
+```
+
+### **O que fazer agora:**
+
+1.  **Imagens:** Certifique-se de que os arquivos `logo_projeto.jpg` (a gota) e `fundo_cana.jpg` (a plantação) estão na pasta raiz do projeto.
+2.  **Código:** Atualize o `src/app.py` com o código acima.
+3.  **GitHub:**
+    ```bash
+    git add .
+    git commit -m "Nova logo e botões 3D"
+    git push
