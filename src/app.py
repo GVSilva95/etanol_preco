@@ -184,8 +184,9 @@ def metric(col, label, key, prefix="", suffix=""):
 if market:
     metric(c1, "🛢️ Brent", 'Petróleo Brent', "US$ ")
     metric(c2, "💵 Dólar", 'Dólar (BRL)', "R$ ")
-    metric(c3, "🍬 Açúcar", 'Açúcar (NY)', "¢")
-    metric(c4, "🌽 Milho", 'Milho (Chicago)', "¢")
+    # AQUI ESTÁ A MUDANÇA: Troquei "¢" por "US$"
+    metric(c3, "🍬 Açúcar", 'Açúcar (NY)', "US$ ")
+    metric(c4, "🌽 Milho", 'Milho (Chicago)', "US$ ")
     metric(c5, "⛽ Gasolina", 'Gasolina RBOB', "US$ ")
     metric(c6, "🔥 Gás Nat.", 'Gás Natural', "US$ ")
     metric(c7, "🏦 Juros 10Y", 'Juros EUA 10Y', "", "%")
@@ -248,5 +249,3 @@ with tab3:
         fig = px.scatter(df, x='Petroleo_Brent', y='Preco_Etanol', color=df.index.year, title="Correlação Histórica", template="plotly_dark")
         fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig, use_container_width=True)
-
-
