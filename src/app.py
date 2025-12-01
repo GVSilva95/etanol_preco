@@ -35,7 +35,7 @@ logo_base64 = get_img_as_base64("logo_projeto.jpg")
 
 # Define URLs (Local ou Fallback Online)
 bg_url = f"data:image/jpg;base64,{bg_base64}" if bg_base64 else "https://images.unsplash.com/photo-1633004147966-c1713534327d?q=80&w=1920"
-logo_html = f'<img src="data:image/jpg;base64,{logo_base64}" style="width: 100%; border-radius: 10px; margin-bottom: 20px;">' if logo_base64 else ""
+logo_html = f'<img src="data:image/jpg;base64,{logo_base64}" style="width: 100%; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,255,127,0.2);">' if logo_base64 else ""
 
 # CSS CUSTOMIZADO (Design Premium + Botões 3D)
 st.markdown(f"""
@@ -49,7 +49,7 @@ st.markdown(f"""
 
     /* Barra Lateral */
     [data-testid="stSidebar"] {{
-        background-color: rgba(15, 20, 15, 0.9);
+        background-color: rgba(12, 16, 12, 0.95);
         border-right: 1px solid rgba(0, 255, 127, 0.1);
     }}
 
@@ -70,30 +70,33 @@ st.markdown(f"""
     div[data-testid="stMetricLabel"] {{ color: #aaa; }}
 
     /* --- NOVOS BOTÕES 3D INTERATIVOS --- */
+    /* Estilo Normal */
     .stButton > button {{
-        background: linear-gradient(to bottom, #00FF7F 0%, #00CC66 100%);
-        color: #002200;
+        background: linear-gradient(180deg, #00FF7F 0%, #00CC66 100%);
+        color: #003300;
         font-weight: 800;
         border: none;
-        border-bottom: 4px solid #00994D; /* A borda cria o efeito 3D */
+        border-bottom: 4px solid #00994D; /* A borda inferior cria o volume 3D */
         border-radius: 8px;
         padding: 12px 24px;
         text-transform: uppercase;
         letter-spacing: 1px;
         transition: all 0.1s ease-in-out;
-        box-shadow: 0px 4px 10px rgba(0, 255, 127, 0.3);
+        box-shadow: 0px 5px 15px rgba(0, 255, 127, 0.2);
     }}
     
-    /* Efeito ao Clicar (Afunda o botão) */
-    .stButton > button:active {{
-        transform: translateY(4px); /* Move para baixo */
-        border-bottom: 0px solid #00994D; /* Remove a borda 3D */
-        margin-bottom: 4px; /* Compensa o espaço */
-        box-shadow: inset 0px 2px 5px rgba(0,0,0,0.2);
-    }}
-
+    /* Efeito Hover (Passar o mouse) */
     .stButton > button:hover {{
         filter: brightness(1.1);
+        transform: translateY(-1px);
+    }}
+
+    /* Efeito Active (Clicar - Afunda o botão) */
+    .stButton > button:active {{
+        transform: translateY(4px); /* Move para baixo ocupando o espaço da borda */
+        border-bottom: 0px solid #00994D; /* Remove a borda para parecer que entrou na tela */
+        margin-bottom: 4px; /* Compensa o layout */
+        box-shadow: inset 0px 3px 5px rgba(0,0,0,0.2); /* Sombra interna */
     }}
 
 </style>
@@ -143,12 +146,13 @@ if df is not None:
 # 3. BARRA LATERAL (Com Logo Personalizada)
 # ==============================================================================
 with st.sidebar:
-    # Exibe a logo se carregou, senão exibe título
+    # --- ÁREA DA LOGO (Topo Esquerdo) ---
     if logo_base64:
         st.markdown(logo_html, unsafe_allow_html=True)
     else:
+        # Fallback se a imagem não carregar
         st.header("Agro Analytics")
-        st.info("Adicione 'logo_projeto.jpg' na raiz para ver a logo.")
+        st.caption("Adicione 'logo_projeto.jpg' na raiz")
 
     st.subheader("Painel de Controle")
     if model:
@@ -157,17 +161,16 @@ with st.sidebar:
         col2.metric("Precisão", f"{score:.1%}")
         
     st.markdown("### Navegação")
-    st.markdown("- Simulador de Preço")
-    st.markdown("- Contexto Global")
-    st.markdown("- Gráficos Técnicos")
+    st.info("Utilize as abas acima para alternar entre Simulador e Gráficos.")
     
-    # Espaçador para empurrar o rodapé para baixo
-    st.markdown("<br>" * 5, unsafe_allow_html=True)
+    # Espaçador grande para empurrar o rodapé para o fundo da tela
+    st.markdown("<br>" * 8, unsafe_allow_html=True)
     
+    # --- RODAPÉ (Inferior Esquerdo) ---
     st.markdown("---")
-    st.caption("Desenvolvido por")
+    st.markdown("### 👨‍💻 Desenvolvedor")
     st.markdown("**Giovanni Silva**")
-    st.caption("Especialista em Inteligência de Mercado")
+    st.caption("Especialista em Inteligência de Mercado | Data Science Aplicado ao Agro")
 
 # ==============================================================================
 # 4. DASHBOARD PRINCIPAL
@@ -184,7 +187,6 @@ def metric(col, label, key, prefix="", suffix=""):
 if market:
     metric(c1, "🛢️ Brent", 'Petróleo Brent', "US$ ")
     metric(c2, "💵 Dólar", 'Dólar (BRL)', "R$ ")
-    # AQUI ESTÁ A MUDANÇA: Troquei "¢" por "US$"
     metric(c3, "🍬 Açúcar", 'Açúcar (NY)', "US$ ")
     metric(c4, "🌽 Milho", 'Milho (Chicago)', "US$ ")
     metric(c5, "⛽ Gasolina", 'Gasolina RBOB', "US$ ")
@@ -208,7 +210,7 @@ with tab1:
             p_sug = st.slider("Açúcar (cents)", 10.0, 40.0, get_v('Açúcar (NY)', 'Acucar'))
             p_mes = st.selectbox("Mês", range(1, 13), index=int(df.index[-1].month-1) if df is not None else 0)
             
-            # BOTÃO COM NOVO ESTILO
+            # BOTÃO COM NOVO ESTILO 3D
             st.write("")
             calc = st.button("CALCULAR PREÇO JUSTO", use_container_width=True)
 
@@ -236,7 +238,11 @@ with tab2:
     with pc1:
         gas = st.number_input("Gasolina (R$/L)", value=5.80, step=0.10)
         eta = st.number_input("Etanol (R$/L)", value=3.60, step=0.10)
+        
+        # Botão com estilo 3D
+        st.write("")
         st.button("Verificar Paridade", use_container_width=True)
+        
     with pc2:
         ratio = (eta / gas) * 100
         st.metric("Paridade Atual", f"{ratio:.1f}%")
