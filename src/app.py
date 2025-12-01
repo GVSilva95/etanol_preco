@@ -224,5 +224,4 @@ with tab1:
                 if df is not None: return float(df[col].iloc[-1])
                 return 0.0
 
-            p_oil = st.slider("Brent (US$)", 40.0, 150.0, get_raw_val('Petróleo Brent', 'Petroleo_Brent'))
-            p_usd = st.slider("D
+         
