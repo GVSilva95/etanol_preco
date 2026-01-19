@@ -597,3 +597,7 @@ with tab4:
 
 st.markdown("---")
 st.caption("Dica: coloque 'fundo_cana.jpg' e 'logo_projeto.jpg' na raiz do projeto ou em /src/images para personalizar.")
+
+cd /Users/giovannisilva/agro_precos_etanol
+streamlit run src/app.py
+
