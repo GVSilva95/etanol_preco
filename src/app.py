@@ -438,4 +438,224 @@ if page == "Visão Geral":
     )
 
 
-#
+# ----------------------------
+# VALUATION (IA)
+# ----------------------------
+elif page == "Valuation (IA)":
+    st.subheader("🧮 Valuation (IA) — Simulador de preço justo")
+
+    left, right = st.columns([1, 2])
+
+    with left:
+        st.markdown("#### Premissas")
+        with st.container(border=True):
+            # valores padrão (se market tiver, usa)
+            def mkt_or_last(mkt_name, col):
+                m = market.get(mkt_name, {}).get("val", 0)
+                if m and m > 0:
+                    return float(m)
+                return float(df_model[col].dropna().iloc[-1])
+
+            p_oil = st.slider("Brent (US$)", 40.0, 150.0, mkt_or_last("Brent", "Petroleo_Brent"))
+            p_usd = st.slider("Dólar (R$)", 3.0, 7.5, mkt_or_last("Dólar (BRL)", "Dolar"))
+            p_sug = st.slider("Açúcar (cents)", 10.0, 40.0, mkt_or_last("Açúcar (NY)", "Acucar"))
+            p_mes = st.selectbox("Mês", list(range(1, 13)), index=int(last_date.month - 1))
+
+            st.write("")
+            calc = st.button("CALCULAR PREÇO JUSTO", use_container_width=True)
+
+    with right:
+        if not calc:
+            st.info("Ajuste as premissas e clique em **CALCULAR PREÇO JUSTO**.")
+        else:
+            X_in = pd.DataFrame(
+                {"Petroleo_Brent": [p_oil], "Dolar": [p_usd], "Acucar": [p_sug], "Mes": [p_mes]}
+            )
+            pred = float(model.predict(X_in)[0])
+            pred_disp = etanol_to_display(pred)
+            last_disp = etanol_to_display(last_price)
+            diff = pred - last_price
+            diff_disp = etanol_to_display(diff)
+
+            st.markdown("#### Resultado do modelo")
+            a, b, c = st.columns(3)
+            a.metric("Preço Justo (Modelo)", f"R$ {fmt_num(pred_disp, 2)}/L")
+            b.metric(f"Mercado (último do dataset) - {last_date:%d/%m/%Y}", f"R$ {fmt_num(last_disp, 2)}/L")
+            c.metric("Spread (Justo - Mercado)", f"R$ {fmt_num(diff_disp, 2)}/L")
+
+            if diff > 0:
+                st.success(f"🚀 **OPORTUNIDADE DE COMPRA:** mercado ~{fmt_num((pred/last_price-1)*100,1)}% abaixo do justo.")
+            else:
+                st.error(f"🔻 **RISCO DE QUEDA:** mercado ~{fmt_num((last_price/pred-1)*100,1)}% acima do justo.")
+
+            # mini sensibilidade (opcional e útil)
+            st.markdown("#### Sensibilidade rápida (Brent)")
+            brent_grid = np.linspace(max(40, p_oil - 20), min(150, p_oil + 20), 25)
+            X_grid = pd.DataFrame(
+                {
+                    "Petroleo_Brent": brent_grid,
+                    "Dolar": [p_usd] * len(brent_grid),
+                    "Acucar": [p_sug] * len(brent_grid),
+                    "Mes": [p_mes] * len(brent_grid),
+                }
+            )
+            y_grid = model.predict(X_grid)
+            y_grid_disp = np.array([etanol_to_display(v) for v in y_grid])
+
+            fig = px.line(
+                x=brent_grid,
+                y=y_grid_disp,
+                labels={"x": "Brent (US$)", "y": "Preço justo estimado (R$/L)"},
+                title="Como o preço justo muda quando o Brent varia",
+                template="plotly_dark",
+            )
+            fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+            st.plotly_chart(fig, use_container_width=True)
+
+
+# ----------------------------
+# PARIDADE
+# ----------------------------
+elif page == "Paridade":
+    st.subheader("⚖️ Calculadora de Paridade — Simulador de bomba")
+
+    c1, c2 = st.columns([1, 1])
+    with c1:
+        with st.container(border=True):
+            gas = st.number_input("Gasolina (R$/L)", value=5.80, step=0.05)
+            eta = st.number_input("Etanol (R$/L)", value=3.60, step=0.05)
+            threshold = st.slider("Limite de paridade (%)", 60, 85, 70)
+            st.caption("Dica: o limite pode variar por eficiência do carro e condições de uso.")
+
+    with c2:
+        ratio = (eta / gas) * 100 if gas else 0
+        eta_max = gas * (threshold / 100)
+
+        st.metric("Paridade atual", f"{fmt_num(ratio, 1)}%")
+        st.metric("Etanol compensa até", f"R$ {fmt_num(eta_max, 2)}/L")
+
+        if ratio < threshold:
+            st.success("✅ **ETANOL VANTAJOSO**")
+        else:
+            st.error("❌ **GASOLINA VANTAJOSA**")
+
+    st.markdown("### Visual rápido")
+    # gráfico simples comparando limites
+    dfp = pd.DataFrame(
+        {
+            "Tipo": ["Etanol (atual)", f"Etanol (limite {threshold}%)"],
+            "R$/L": [eta, eta_max],
+        }
+    )
+    fig = px.bar(dfp, x="Tipo", y="R$/L", title="Etanol atual vs limite de paridade", template="plotly_dark")
+    fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+    st.plotly_chart(fig, use_container_width=True)
+
+
+# ----------------------------
+# HISTÓRICO & MODELO (GRÁFICOS)
+# ----------------------------
+elif page == "Histórico & Modelo":
+    st.subheader("📊 Histórico & Modelo — gráficos e diagnóstico")
+
+    df2 = df_model.copy()
+    # converter para exibição (se o dataset estiver em m³)
+    df2["Preco_Etanol_disp"] = df2["Preco_Etanol"].apply(etanol_to_display)
+    df2["Preco_Justo_disp"] = df2["Preco_Justo_Modelo"].apply(etanol_to_display)
+    df2["Spread_disp"] = df2["Spread"].apply(etanol_to_display)
+
+    # filtro de período
+    min_d, max_d = df2.index.min().date(), df2.index.max().date()
+    d1, d2 = st.date_input("Período", value=(min_d, max_d), min_value=min_d, max_value=max_d)
+    dff = df2.loc[str(d1) : str(d2)].copy()
+
+    tabA, tabB, tabC = st.tabs(["📈 Séries", "🧠 Drivers", "🧪 Qualidade do Modelo"])
+
+    with tabA:
+        fig1 = go.Figure()
+        fig1.add_trace(go.Scatter(x=dff.index, y=dff["Preco_Etanol_disp"], name="Real (Etanol)", mode="lines"))
+        fig1.add_trace(go.Scatter(x=dff.index, y=dff["Preco_Justo_disp"], name="Preço Justo (Modelo)", mode="lines"))
+        fig1.update_layout(
+            title="Real vs Preço Justo (Modelo)",
+            template="plotly_dark",
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+        )
+        st.plotly_chart(fig1, use_container_width=True)
+
+        fig2 = px.line(
+            dff,
+            x=dff.index,
+            y="Spread_disp",
+            title="Spread (Preço Justo - Real)",
+            template="plotly_dark",
+            labels={"Spread_disp": "Spread (R$/L)"},
+        )
+        fig2.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+        st.plotly_chart(fig2, use_container_width=True)
+
+    with tabB:
+        # Correlação
+        cols = [c for c in ["Preco_Etanol", "Petroleo_Brent", "Dolar", "Acucar"] if c in dff.columns]
+        corr = dff[cols].corr()
+        fig3 = px.imshow(corr, text_auto=True, title="Correlação entre variáveis", template="plotly_dark")
+        fig3.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+        st.plotly_chart(fig3, use_container_width=True)
+
+        # Feature importance
+        imp = pd.DataFrame({"feature": FEATURES, "importance": model.feature_importances_}).sort_values(
+            "importance", ascending=False
+        )
+        fig4 = px.bar(imp, x="feature", y="importance", title="Importância das variáveis (RandomForest)", template="plotly_dark")
+        fig4.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+        st.plotly_chart(fig4, use_container_width=True)
+
+        # Scatter Brent vs Etanol
+        fig5 = px.scatter(
+            dff,
+            x="Petroleo_Brent",
+            y="Preco_Etanol_disp",
+            color=dff.index.year.astype(str),
+            title="Relação histórica: Etanol vs Brent",
+            template="plotly_dark",
+            labels={"Preco_Etanol_disp": "Etanol (R$/L)"},
+        )
+        fig5.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+        st.plotly_chart(fig5, use_container_width=True)
+
+    with tabC:
+        # Predito vs Real no teste
+        y_test = test_bundle["y_test"]
+        y_pred = test_bundle["y_pred_test"]
+
+        y_test_disp = np.array([etanol_to_display(v) for v in y_test.values])
+        y_pred_disp = np.array([etanol_to_display(v) for v in y_pred])
+
+        df_sc = pd.DataFrame({"Real": y_test_disp, "Predito": y_pred_disp})
+        fig6 = px.scatter(df_sc, x="Real", y="Predito", title="Teste: Predito vs Real", template="plotly_dark")
+        # linha 45°
+        mn = float(np.nanmin([df_sc["Real"].min(), df_sc["Predito"].min()]))
+        mx = float(np.nanmax([df_sc["Real"].max(), df_sc["Predito"].max()]))
+        fig6.add_trace(go.Scatter(x=[mn, mx], y=[mn, mx], mode="lines", name="Linha 45°"))
+        fig6.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+        st.plotly_chart(fig6, use_container_width=True)
+
+        # Resíduos no teste ao longo do tempo
+        resid = (y_pred - y_test.values)
+        resid_disp = np.array([etanol_to_display(v) for v in resid])
+
+        df_res = pd.DataFrame({"Data": y_test.index, "Resíduo": resid_disp}).set_index("Data")
+        fig7 = px.line(df_res, x=df_res.index, y="Resíduo", title="Resíduo no teste ao longo do tempo", template="plotly_dark")
+        fig7.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+        st.plotly_chart(fig7, use_container_width=True)
+
+        st.markdown("#### Métricas (teste temporal)")
+        m1, m2, m3 = st.columns(3)
+        m1.metric("R² (teste)", f"{metrics['r2_test']:.3f}")
+        m2.metric("MAE (teste)", f"{fmt_num(etanol_to_display(metrics['mae_test']), 3)} R$/L")
+        m3.metric("MAPE (teste)", f"{metrics['mape_test']:.1%}")
+
+
+# Footer
+st.markdown("---")
+st.caption("Dica: coloque `logo_projeto.jpg` e `fundo_cana.jpg` na raiz do projeto para personalizar o visual.")
