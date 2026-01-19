@@ -1,7 +1,4 @@
-cd /Users/giovannisilva/agro_precos_etanol/src
-cp app.py app.py.backup_css_bug
 
-cat > app.py <<'PY'
 import os
 import base64
 from pathlib import Path
