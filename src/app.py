@@ -92,7 +92,6 @@ bg_url = (
     if bg_base64
     else "https://images.unsplash.com/photo-1633004147966-c1713534327d?q=80&w=1920"
 )
-
 st.markdown(
     f"""
 <style>
@@ -117,6 +116,8 @@ st.markdown(
 </style>
 """,
     unsafe_allow_html=True,
+
+
 )
 
 
