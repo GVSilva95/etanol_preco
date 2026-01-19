@@ -1,0 +1,29 @@
+# --- Python ---
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.env
+
+# --- Streamlit ---
+.streamlit/
+
+# --- Mac ---
+.DS_Store
+
+# --- Logs ---
+*.log
+
+# --- Dados (não expor) ---
+data/raw/
+data/interim/
+data/processed/*.csv
+data/processed/*.parquet
+
+# Se quiser manter a pasta no repo sem os arquivos:
+!data/processed/.gitkeep
+
+# --- Imagens/arte local (opcional) ---
+# Se tiver imagens que não quer expor:
+# images/private/
