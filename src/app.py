@@ -366,6 +366,4 @@ with tab3:
     a2.metric("R² (baseline)", f"{metrics['r2_naive']:.3f}")
     b2.metric("MAPE (baseline)", f"{metrics['mape_naive']:.1%}")
     c2.metric("MAE (baseline)", f"{fmt_num(metrics['mae_naive'], 3)}")
-PY
 
-python3 -m py_compile app.py
