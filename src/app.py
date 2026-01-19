@@ -104,7 +104,7 @@ st.markdown(
 
 [data-testid="stSidebar"] {{
   background-color: rgba(12,16,12,0.90);
-  border-right: 1px solid rgba(0,255,127,0.10);
+  border-right: 1px solid rgba(0, 255, 127, 0.10);
 }}
 
 .glass {{
@@ -113,42 +113,6 @@ st.markdown(
   border-radius: 14px;
   padding: 14px 16px;
   backdrop-filter: blur(6px);
-}}
-
-.small {{
-  font-size: 12px;
-  opacity: 0.85;
-}}
-
-.tickerValue {{
-  font-size: 22px;
-  font-weight: 900;
-  white-space: nowrap;
-}}
-
-.tickerDelta {{
-  font-size: 12px;
-  font-weight: 800;
-  white-space: nowrap;
-}}
-
-.stButton > button {{
-  background: linear-gradient(to bottom, #00FF7F 0%, #00CC66 100%);
-  color: #002200;
-  font-weight: 900;
-  border: none;
-  border-bottom: 4px solid #00994D;
-  border-radius: 10px;
-  padding: 12px 18px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  transition: all 0.12s ease-in-out;
-  box-shadow: 0px 6px 14px rgba(0, 255, 127, 0.25);
-}}
-.stButton > button:active {{
-  transform: translateY(4px);
-  border-bottom: 0px;
-  box-shadow: inset 0px 2px 6px rgba(0,0,0,0.25);
 }}
 </style>
 """,
